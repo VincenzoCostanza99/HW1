@@ -1,0 +1,17 @@
+#usa una base immagine con python
+FROM python:3.13.0
+
+#imposto la working directory all'interno del container
+WORKDIR /app
+
+#copio il file dipend_datacollector.txt per installare le dipendenze
+COPY requirements.txt .
+
+#installo le dipendenze da dipend_datacollector.txt
+RUN pip install --no-cache-dir -r requirements.txt
+
+
+COPY AlertNotifierSystem.py .
+
+#metto il comando di esecuzione del server gRPC
+CMD ["python", "AlertNotifierSystem.py"]

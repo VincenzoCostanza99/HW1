@@ -1,0 +1,21 @@
+#usa una base immagine con python
+FROM python:3.13.0
+
+#imposto la working directory all'interno del container
+WORKDIR /app
+
+#copio il file dipend_server.txt per installare le dipendenze
+COPY requirements.txt .
+
+#installo le dipendenze da dipend_server.txt
+RUN pip install --no-cache-dir -r requirements.txt
+
+#copia i file python e i file generati da grpc nella cartella di lavoro
+COPY protoBuffer_pb2_grpc.py .
+COPY protoBuffer_pb2.py .
+COPY cqrs.py .
+COPY server.py .
+COPY protoBuffer_pb2.pyi .
+
+#metto il comando di esecuzione del server gRPC
+CMD ["python", "server.py"]

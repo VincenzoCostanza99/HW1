@@ -1,0 +1,107 @@
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: mysql_db
+    environment:
+      MYSQL_ROOT_PASSWORD: ciao
+      MYSQL_DATABASE: hw2
+      MYSQL_USER: pippo
+      MYSQL_PASSWORD: ciao
+    volumes:
+      - mysql_data:/var/lib/mysql #volume per i dati nel database  
+      - ./db.sql:/docker-entrypoint-initdb.d/db.sql
+    networks:
+      - my_network
+
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile.server
+    container_name: server 
+    ports:
+      - 50051:50051
+    depends_on:
+      - mysql
+    networks:
+      - my_network
+    restart: always    
+  
+  datacollector:
+    build:
+      context: .
+      dockerfile: Dockerfile.datacollector
+    container_name: data_collector
+    depends_on:
+      - mysql
+    networks:
+      - my_network  
+    restart: always        
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.3.2
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - 2181:2181
+    volumes:
+      - zookeeper_data:/var/lib/zookeeper/data  
+    networks:
+      - my_network
+
+  kafka:
+    image: confluentinc/cp-kafka:7.3.2
+    container_name: kafka
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL: PLAINTEXT
+      KAFKA_LOG_RETENTION_HOURS: 168
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+    ports:
+      - "9092:9092"
+    depends_on:
+      - zookeeper  
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    networks:
+      - my_network    
+    restart: always  
+
+  alert_system:
+    build:
+        context: .
+        dockerfile: Dockerfile.alertsystem
+    container_name: alert_system
+    depends_on:
+      - kafka
+      - mysql
+    networks:
+      - my_network
+    restart: always
+
+  alert_notifier_system:
+    build:
+      context: .
+      dockerfile: Dockerfile.alertnotifiersystem
+    container_name: alert_notifier_system
+    depends_on:
+      - kafka
+      - mysql
+    networks:
+      - my_network
+    restart: always
+
+networks:
+  my_network:
+    driver: bridge
+
+volumes:
+  mysql_data:
+  zookeeper_data:
+  kafka_data:
