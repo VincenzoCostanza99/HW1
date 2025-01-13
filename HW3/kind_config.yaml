@@ -1,0 +1,15 @@
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: homework3
+nodes:
+  - role: control-plane
+    image: kindest/node:v1.23.0
+    extraPortMappings:
+      - containerPort: 30000
+        hostPort: 50051
+        protocol: TCP
+      - containerPort: 30001
+        hostPort: 9090
+        protocol: TCP  
+  - role: worker
+    image: kindest/node:v1.23.0
